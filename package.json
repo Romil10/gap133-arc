@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Pay-per-query gap133 market data on Arc",
   "scripts": {
-    "test": "node test/e2e.mjs",
+    "test": "npm install --no-save ganache@7 && node test/e2e.mjs",
     "compile": "node scripts/compile.mjs"
   },
   "keywords": [],
@@ -14,7 +14,6 @@
     "viem": "^2.57.3"
   },
   "devDependencies": {
-    "ganache": "^7.9.2",
     "solc": "^0.8.28"
   },
   "engines": {
