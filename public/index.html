@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>gap133 on Arc · pay-per-query market gaps</title>
+<meta name="description" content="Pay 0.01 USDC on Arc and get gap133's live, verified cross-venue prediction-market gaps, signed so any agent can check them.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root { --paper:#EEF1E9; --ink:#0E0E0C; --acid:#C6F211; --flare:#FF4D2E; --mute:#5b5e57; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--paper); color:var(--ink); font:15px/1.55 'JetBrains Mono', monospace; }
+  .wrap { max-width:860px; margin:0 auto; padding:40px 24px 80px; }
+  h1 { font:700 34px/1.1 'Space Mono', monospace; margin:0 0 8px; letter-spacing:-0.02em; }
+  h1 b { background:var(--acid); padding:0 6px; }
+  h2 { font:700 16px 'Space Mono', monospace; text-transform:uppercase; letter-spacing:0.08em; margin:36px 0 10px; border-top:2px solid var(--ink); padding-top:12px; }
+  p.lede { color:var(--mute); max-width:640px; }
+  .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin:10px 0; }
+  select, input, button { font:inherit; border:2px solid var(--ink); background:#fff; padding:9px 12px; border-radius:0; }
+  button { background:var(--ink); color:var(--paper); cursor:pointer; font-weight:700; }
+  button:hover { background:var(--acid); color:var(--ink); }
+  button:disabled { opacity:0.45; cursor:not-allowed; }
+  .status { min-height:22px; color:var(--mute); }
+  .status.err { color:var(--flare); }
+  .kv { display:grid; grid-template-columns:150px 1fr; gap:4px 12px; font-size:13px; word-break:break-all; }
+  .kv span:nth-child(odd) { color:var(--mute); }
+  table { width:100%; border-collapse:collapse; font-size:13px; margin-top:8px; }
+  th, td { text-align:left; padding:7px 6px; border-bottom:1px solid #c9ccc4; vertical-align:top; }
+  th { font-weight:700; }
+  td.num { text-align:right; white-space:nowrap; font-weight:700; }
+  pre { background:var(--ink); color:var(--paper); padding:14px; overflow:auto; font-size:12px; }
+  a { color:var(--ink); }
+  .badge { display:inline-block; padding:1px 6px; border:1.5px solid var(--ink); font-size:11px; margin-left:6px; }
+  .ok { background:var(--acid); }
+  footer { margin-top:48px; color:var(--mute); font-size:12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>gap133 <b>on Arc</b></h1>
+  <p class="lede">Pay one cent in USDC on Arc and get gap133's live, verified cross-venue prediction-market gaps. No account, no subscription, no API key. Every answer is signed, so an agent can prove it came from gap133.</p>
+
+  <h2>01 / Ask</h2>
+  <div class="row">
+    <select id="kind">
+      <option value="top">Top 5 gaps right now</option>
+      <option value="net">Gaps still positive after fees</option>
+      <option value="pair">One pair by Kalshi ticker</option>
+    </select>
+    <input id="ticker" placeholder="KX… ticker" style="display:none;width:240px">
+    <button id="go">Connect wallet and pay</button>
+  </div>
+  <div id="status" class="status">Needs MetaMask (or any EVM wallet) on Arc mainnet with a few cents of USDC.</div>
+
+  <h2>02 / Answer</h2>
+  <div id="answer" class="status">Nothing yet.</div>
+
+  <h2>How it works</h2>
+  <div class="kv" id="info"><span>contract</span><span>loading…</span></div>
+  <p>The service answers your first request with <code>HTTP 402 Payment Required</code> and a one-time nonce. You call <code>pay(nonce)</code> on the contract with the exact price in native USDC. The service reads the payment on Arc (finality is under a second) and returns the data with the attester's signature in the <code>X-Signature</code> header. The attester address is stored in the contract, so anyone can check it.</p>
+  <pre>curl -i https://YOUR-DEPLOYMENT/api/query?kind=top
+# -> 402 { nonce, challenge, contract, price }
+# pay(nonce) on Arc, then:
+curl https://YOUR-DEPLOYMENT/api/query?kind=top \
+  -H "X-Payment-Challenge: &lt;challenge&gt;" -H "X-Payment-Tx: &lt;tx hash&gt;"</pre>
+  <p>Agents: see <a href="https://github.com/Romil10/gap133-arc/blob/main/examples/agent.mjs" target="_blank" rel="noopener noreferrer">examples/agent.mjs</a> for a script that pays and verifies on its own.</p>
+
+  <footer>Market data only, not trading advice. Gaps can close before you act. Source: <a href="https://gap133.xyz" target="_blank" rel="noopener noreferrer">gap133.xyz</a>. Code: <a href="https://github.com/Romil10/gap133-arc" target="_blank" rel="noopener noreferrer">github.com/Romil10/gap133-arc</a>.</footer>
+</div>
+<script>
+const ARC = { chainId: '0x13b2', chainName: 'Arc', nativeCurrency: { name: 'USDC', symbol: 'USDC', decimals: 18 }, rpcUrls: ['https://rpc.mainnet.arc.io'], blockExplorerUrls: ['https://explorer.arc.io'] };
+const PAY_SELECTOR = '0x8609cad1'; // pay(bytes32)
+const $ = (id) => document.getElementById(id);
+const say = (msg, err) => { $('status').textContent = msg; $('status').className = 'status' + (err ? ' err' : ''); };
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+$('kind').onchange = () => { $('ticker').style.display = $('kind').value === 'pair' ? '' : 'none'; };
+
+(async () => {
+  try {
+    const i = await (await fetch('/api/info')).json();
+    $('info').innerHTML = `<span>chain</span><span>Arc mainnet (5042)</span>
+      <span>contract</span><span>${i.contract ? `<a href="https://explorer.arc.io/address/${i.contract}" target="_blank" rel="noopener noreferrer">${i.contract}</a>` : 'not deployed yet'}</span>
+      <span>price</span><span>${i.price ? i.price.usdc + ' USDC per query' : '–'}</span>
+      <span>attester</span><span>${esc(i.attester)}${i.attesterMatchesContract ? '<span class="badge ok">matches contract</span>' : ''}</span>`;
+  } catch { $('info').innerHTML = '<span>status</span><span>service unreachable</span>'; }
+})();
+
+function queryString() {
+  const kind = $('kind').value;
+  const q = new URLSearchParams({ kind });
+  if (kind === 'pair') q.set('ticker', $('ticker').value.trim());
+  return '/api/query?' + q.toString();
+}
+
+async function ensureArc() {
+  const eth = window.ethereum;
+  if (!eth) throw new Error('No wallet found. Install MetaMask, then reload.');
+  const [account] = await eth.request({ method: 'eth_requestAccounts' });
+  const chainId = await eth.request({ method: 'eth_chainId' });
+  if (chainId !== ARC.chainId) {
+    try { await eth.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: ARC.chainId }] }); }
+    catch (e) {
+      if (e.code === 4902) await eth.request({ method: 'wallet_addEthereumChain', params: [ARC] });
+      else throw e;
+    }
+  }
+  return account;
+}
+
+async function waitReceipt(hash) {
+  for (let i = 0; i < 60; i++) {
+    const r = await window.ethereum.request({ method: 'eth_getTransactionReceipt', params: [hash] });
+    if (r) return r;
+    await new Promise((res) => setTimeout(res, 1000));
+  }
+  throw new Error('Payment not confirmed after 60 seconds.');
+}
+
+function render(body, attester) {
+  const rows = (body.data?.pairs || []).map((p) => `<tr>
+    <td>${esc(p.kx?.title || p.kx?.ticker)}<br><small>${esc(p.second?.venue || '')} vs Kalshi · ${esc(p.status || '')}</small></td>
+    <td class="num">${p.gap?.rawCents != null ? Number(p.gap.rawCents).toFixed(2) + '¢' : '–'}</td>
+    <td class="num">${p.gap?.netCents != null ? Number(p.gap.netCents).toFixed(2) + '¢' : '–'}</td></tr>`).join('');
+  $('answer').className = '';
+  $('answer').innerHTML = `<div class="kv"><span>paid by</span><span>${esc(body.payment.payer)}</span>
+    <span>transaction</span><span><a href="https://explorer.arc.io/tx/${esc(body.payment.txHash)}" target="_blank" rel="noopener noreferrer">${esc(body.payment.txHash)}</a></span>
+    <span>signed by</span><span>${esc(attester)}</span><span>issued</span><span>${esc(body.issuedAt)}</span></div>
+    <table><tr><th>Market</th><th class="num">Raw gap</th><th class="num">After fees</th></tr>${rows || '<tr><td colspan="3">No pairs match right now.</td></tr>'}</table>`;
+}
+
+$('go').onclick = async () => {
+  $('go').disabled = true;
+  try {
+    const url = queryString();
+    say('Asking the service for a payment challenge…');
+    const first = await fetch(url);
+    const c = await first.json();
+    if (first.status !== 402) throw new Error(c.error || 'unexpected response ' + first.status);
+    const account = await ensureArc();
+    say(`Approve the ${c.price.usdc} USDC payment in your wallet…`);
+    const hash = await window.ethereum.request({ method: 'eth_sendTransaction', params: [{ from: account, to: c.contract, value: '0x' + BigInt(c.price.wei).toString(16), data: PAY_SELECTOR + c.nonce.slice(2) }] });
+    say('Payment sent. Waiting for Arc to confirm…');
+    const rcpt = await waitReceipt(hash);
+    if (rcpt.status !== '0x1') throw new Error('Payment transaction failed.');
+    say('Paid. Fetching your answer…');
+    const res = await fetch(url, { headers: { 'X-Payment-Challenge': c.challenge, 'X-Payment-Tx': hash } });
+    const body = await res.json();
+    if (!res.ok) throw new Error(body.error || 'query failed');
+    render(body, res.headers.get('X-Attester'));
+    say('Done. The answer below is signed by the attester shown.');
+  } catch (e) {
+    say(e.message || String(e), true);
+  } finally {
+    $('go').disabled = false;
+  }
+};
+</script>
+</body>
+</html>

@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deploy · gap133 on Arc</title>
+<meta name="robots" content="noindex">
+<style>
+  body { margin:0; background:#EEF1E9; color:#0E0E0C; font:15px/1.6 ui-monospace, Menlo, monospace; }
+  .wrap { max-width:720px; margin:0 auto; padding:40px 24px; }
+  button { font:inherit; font-weight:700; border:2px solid #0E0E0C; background:#0E0E0C; color:#EEF1E9; padding:10px 14px; cursor:pointer; }
+  button:disabled { opacity:.4; }
+  li { margin:8px 0; }
+  #out { margin-top:16px; word-break:break-all; }
+  .err { color:#FF4D2E; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Deploy the contract</h1>
+  <p>One-time setup. This sends a single transaction from your own wallet to create the gap133 pay-per-query contract on Arc mainnet. Gas is a few cents of USDC.</p>
+  <ol>
+    <li>The attester address is read from this deployment's <code>/api/info</code>, so <code>SERVICE_SECRET</code> must already be set in Vercel.</li>
+    <li>The price is fixed at 0.01 USDC per query (you can change it later with <code>setPrice</code>).</li>
+    <li>After it confirms, copy the contract address into Vercel as <code>CONTRACT_ADDRESS</code> and redeploy.</li>
+  </ol>
+  <button id="go">Deploy from my wallet</button>
+  <div id="out"></div>
+</div>
+<script>
+const ARC = { chainId: '0x13b2', chainName: 'Arc', nativeCurrency: { name: 'USDC', symbol: 'USDC', decimals: 18 }, rpcUrls: ['https://rpc.mainnet.arc.io'], blockExplorerUrls: ['https://explorer.arc.io'] };
+const PRICE_WEI = 10n ** 16n; // 0.01 USDC at 18 decimals
+const out = (h, err) => { const el = document.getElementById('out'); el.innerHTML = h; el.className = err ? 'err' : ''; };
+const pad = (hex) => hex.replace(/^0x/, '').toLowerCase().padStart(64, '0');
+
+document.getElementById('go').onclick = async () => {
+  const btn = document.getElementById('go');
+  btn.disabled = true;
+  try {
+    const info = await (await fetch('/api/info')).json();
+    if (!info.attester) throw new Error('Service not configured: set SERVICE_SECRET in Vercel first.');
+    if (info.contract) throw new Error('A contract is already configured: ' + info.contract);
+    const art = await (await fetch('/contract.json')).json();
+    const eth = window.ethereum;
+    if (!eth) throw new Error('No wallet found. Install MetaMask.');
+    const [from] = await eth.request({ method: 'eth_requestAccounts' });
+    if ((await eth.request({ method: 'eth_chainId' })) !== ARC.chainId) {
+      try { await eth.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: ARC.chainId }] }); }
+      catch (e) { if (e.code === 4902) await eth.request({ method: 'wallet_addEthereumChain', params: [ARC] }); else throw e; }
+    }
+    const data = art.bytecode + pad(info.attester) + pad(PRICE_WEI.toString(16));
+    out('Approve the deployment in your wallet. Attester: ' + info.attester);
+    const hash = await eth.request({ method: 'eth_sendTransaction', params: [{ from, data }] });
+    out('Sent ' + hash + '. Waiting for confirmation…');
+    let r = null;
+    for (let i = 0; i < 60 && !r; i++) { r = await eth.request({ method: 'eth_getTransactionReceipt', params: [hash] }); if (!r) await new Promise((s) => setTimeout(s, 1000)); }
+    if (!r || r.status !== '0x1') throw new Error('Deployment failed or not confirmed. Check ' + hash + ' on explorer.arc.io');
+    out(`<b>Deployed.</b><br>Contract address: <b>${r.contractAddress}</b><br><a href="https://explorer.arc.io/address/${r.contractAddress}" target="_blank" rel="noopener noreferrer">View on explorer</a><br><br>Next: in Vercel, add <code>CONTRACT_ADDRESS</code> = ${r.contractAddress}, then redeploy.`);
+  } catch (e) {
+    out(e.message || String(e), true);
+  } finally {
+    btn.disabled = false;
+  }
+};
+</script>
+</body>
+</html>

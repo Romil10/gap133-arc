@@ -1,0 +1,259 @@
+{
+ "compiler": "0.8.28+commit.7893614a.Emscripten.clang",
+ "evmVersion": "cancun",
+ "optimizerRuns": 200,
+ "abi": [
+  {
+   "inputs": [
+    {
+     "internalType": "address",
+     "name": "_attester",
+     "type": "address"
+    },
+    {
+     "internalType": "uint256",
+     "name": "_price",
+     "type": "uint256"
+    }
+   ],
+   "stateMutability": "nonpayable",
+   "type": "constructor"
+  },
+  {
+   "inputs": [],
+   "name": "NonceUsed",
+   "type": "error"
+  },
+  {
+   "inputs": [],
+   "name": "NotOwner",
+   "type": "error"
+  },
+  {
+   "inputs": [],
+   "name": "TransferFailed",
+   "type": "error"
+  },
+  {
+   "inputs": [],
+   "name": "WrongAmount",
+   "type": "error"
+  },
+  {
+   "inputs": [],
+   "name": "ZeroAddress",
+   "type": "error"
+  },
+  {
+   "anonymous": false,
+   "inputs": [
+    {
+     "indexed": false,
+     "internalType": "address",
+     "name": "attester",
+     "type": "address"
+    }
+   ],
+   "name": "AttesterChanged",
+   "type": "event"
+  },
+  {
+   "anonymous": false,
+   "inputs": [
+    {
+     "indexed": false,
+     "internalType": "address",
+     "name": "owner",
+     "type": "address"
+    }
+   ],
+   "name": "OwnerChanged",
+   "type": "event"
+  },
+  {
+   "anonymous": false,
+   "inputs": [
+    {
+     "indexed": true,
+     "internalType": "bytes32",
+     "name": "nonce",
+     "type": "bytes32"
+    },
+    {
+     "indexed": true,
+     "internalType": "address",
+     "name": "payer",
+     "type": "address"
+    },
+    {
+     "indexed": false,
+     "internalType": "uint256",
+     "name": "amount",
+     "type": "uint256"
+    }
+   ],
+   "name": "Paid",
+   "type": "event"
+  },
+  {
+   "anonymous": false,
+   "inputs": [
+    {
+     "indexed": false,
+     "internalType": "uint256",
+     "name": "price",
+     "type": "uint256"
+    }
+   ],
+   "name": "PriceChanged",
+   "type": "event"
+  },
+  {
+   "anonymous": false,
+   "inputs": [
+    {
+     "indexed": false,
+     "internalType": "address",
+     "name": "to",
+     "type": "address"
+    },
+    {
+     "indexed": false,
+     "internalType": "uint256",
+     "name": "amount",
+     "type": "uint256"
+    }
+   ],
+   "name": "Withdrawn",
+   "type": "event"
+  },
+  {
+   "inputs": [],
+   "name": "attester",
+   "outputs": [
+    {
+     "internalType": "address",
+     "name": "",
+     "type": "address"
+    }
+   ],
+   "stateMutability": "view",
+   "type": "function"
+  },
+  {
+   "inputs": [],
+   "name": "owner",
+   "outputs": [
+    {
+     "internalType": "address",
+     "name": "",
+     "type": "address"
+    }
+   ],
+   "stateMutability": "view",
+   "type": "function"
+  },
+  {
+   "inputs": [
+    {
+     "internalType": "bytes32",
+     "name": "",
+     "type": "bytes32"
+    }
+   ],
+   "name": "paid",
+   "outputs": [
+    {
+     "internalType": "bool",
+     "name": "",
+     "type": "bool"
+    }
+   ],
+   "stateMutability": "view",
+   "type": "function"
+  },
+  {
+   "inputs": [
+    {
+     "internalType": "bytes32",
+     "name": "nonce",
+     "type": "bytes32"
+    }
+   ],
+   "name": "pay",
+   "outputs": [],
+   "stateMutability": "payable",
+   "type": "function"
+  },
+  {
+   "inputs": [],
+   "name": "price",
+   "outputs": [
+    {
+     "internalType": "uint256",
+     "name": "",
+     "type": "uint256"
+    }
+   ],
+   "stateMutability": "view",
+   "type": "function"
+  },
+  {
+   "inputs": [
+    {
+     "internalType": "address",
+     "name": "_attester",
+     "type": "address"
+    }
+   ],
+   "name": "setAttester",
+   "outputs": [],
+   "stateMutability": "nonpayable",
+   "type": "function"
+  },
+  {
+   "inputs": [
+    {
+     "internalType": "uint256",
+     "name": "_price",
+     "type": "uint256"
+    }
+   ],
+   "name": "setPrice",
+   "outputs": [],
+   "stateMutability": "nonpayable",
+   "type": "function"
+  },
+  {
+   "inputs": [
+    {
+     "internalType": "address",
+     "name": "_owner",
+     "type": "address"
+    }
+   ],
+   "name": "transferOwnership",
+   "outputs": [],
+   "stateMutability": "nonpayable",
+   "type": "function"
+  },
+  {
+   "inputs": [
+    {
+     "internalType": "address payable",
+     "name": "to",
+     "type": "address"
+    }
+   ],
+   "name": "withdraw",
+   "outputs": [],
+   "stateMutability": "nonpayable",
+   "type": "function"
+  },
+  {
+   "stateMutability": "payable",
+   "type": "receive"
+  }
+ ],
+ "bytecode": "0x608060405234801561000f575f5ffd5b5060405161074138038061074183398101604081905261002e9161012c565b6001600160a01b0382166100555760405163d92e233d60e01b815260040160405180910390fd5b5f8054336001600160a01b03199182168117909255600180549091166001600160a01b03851617905560028290556040519081527fa2ea9883a321a3e97b8266c2b078bfeec6d50c711ed71f874a90d500ae2eaf369060200160405180910390a16040516001600160a01b03831681527fd2f71d91565d73172f618db2b9700107b9c6284d219be126e4187b5b139961a49060200160405180910390a16040518181527fa6dc15bdb68da224c66db4b3838d9a2b205138e8cff6774e57d0af91e196d6229060200160405180910390a15050610163565b5f5f6040838503121561013d575f5ffd5b82516001600160a01b0381168114610153575f5ffd5b6020939093015192949293505050565b6105d1806101705f395ff3fe608060405260043610610087575f3560e01c806391b7f5ed1161005757806391b7f5ed146101375780639daf85ab14610156578063a035b1fe14610175578063add89bb214610198578063f2fde38b146101d6575f5ffd5b806347b0c3b3146100a957806351cff8d9146100e55780638609cad1146101065780638da5cb5b14610119575f5ffd5b366100a5576040516349986e7360e01b815260040160405180910390fd5b5f5ffd5b3480156100b4575f5ffd5b506001546100c8906001600160a01b031681565b6040516001600160a01b0390911681526020015b60405180910390f35b3480156100f0575f5ffd5b506101046100ff366004610562565b6101f5565b005b610104610114366004610584565b6102fe565b348015610124575f5ffd5b505f546100c8906001600160a01b031681565b348015610142575f5ffd5b50610104610151366004610584565b6103a8565b348015610161575f5ffd5b50610104610170366004610562565b61040e565b348015610180575f5ffd5b5061018a60025481565b6040519081526020016100dc565b3480156101a3575f5ffd5b506101c66101b2366004610584565b60036020525f908152604090205460ff1681565b60405190151581526020016100dc565b3480156101e1575f5ffd5b506101046101f0366004610562565b6104ad565b5f546001600160a01b0316331461021f576040516330cd747160e01b815260040160405180910390fd5b6001600160a01b0381166102465760405163d92e233d60e01b815260040160405180910390fd5b60405147905f906001600160a01b0384169083908381818185875af1925050503d805f8114610290576040519150601f19603f3d011682016040523d82523d5f602084013e610295565b606091505b50509050806102b7576040516312171d8360e31b815260040160405180910390fd5b604080516001600160a01b0385168152602081018490527f7084f5476618d8e60b11ef0d7d3f06914655adb8793e28ff7f018d4c76d505d5910160405180910390a1505050565b6002543414610320576040516349986e7360e01b815260040160405180910390fd5b5f8181526003602052604090205460ff161561034f57604051631f6d5aef60e01b815260040160405180910390fd5b5f8181526003602052604090819020805460ff1916600117905551339082907f606160394df2742a67735645b7e783304d61d2dbc5b550e8c6acfaf27b6291d79061039d9034815260200190565b60405180910390a350565b5f546001600160a01b031633146103d2576040516330cd747160e01b815260040160405180910390fd5b60028190556040518181527fa6dc15bdb68da224c66db4b3838d9a2b205138e8cff6774e57d0af91e196d622906020015b60405180910390a150565b5f546001600160a01b03163314610438576040516330cd747160e01b815260040160405180910390fd5b6001600160a01b03811661045f5760405163d92e233d60e01b815260040160405180910390fd5b600180546001600160a01b0319166001600160a01b0383169081179091556040519081527fd2f71d91565d73172f618db2b9700107b9c6284d219be126e4187b5b139961a490602001610403565b5f546001600160a01b031633146104d7576040516330cd747160e01b815260040160405180910390fd5b6001600160a01b0381166104fe5760405163d92e233d60e01b815260040160405180910390fd5b5f80546001600160a01b0319166001600160a01b0383169081179091556040519081527fa2ea9883a321a3e97b8266c2b078bfeec6d50c711ed71f874a90d500ae2eaf3690602001610403565b6001600160a01b038116811461055f575f5ffd5b50565b5f60208284031215610572575f5ffd5b813561057d8161054b565b9392505050565b5f60208284031215610594575f5ffd5b503591905056fea2646970667358221220d70ca5db158ad7b5e0204f94c6ddb29197ece2166c3fc594d92fb849606a046664736f6c634300081c0033"
+}
