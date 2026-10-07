@@ -16,6 +16,44 @@ No account, no subscription, no API key. A person or an AI agent pays 0.01 USDC 
 | Free sample | https://arc.gap133.xyz/api/sample |
 | Usage stats | https://arc.gap133.xyz/api/stats (counted on-chain) |
 
+## Use it from an AI assistant (MCP)
+
+`mcp/server.mjs` is an MCP server. Add it to Claude Desktop, Claude Code, Cursor or any MCP client and the assistant gets four tools:
+
+| Tool | Cost | What it does |
+|---|---|---|
+| `gap133_sample` | free | The biggest verified gap from a 10-minute snapshot |
+| `gap133_query` | 0.01 USDC | Live top gaps, after-fee gaps, or one pair, paid on Arc and signature-verified |
+| `gap133_wallet` | free | The agent wallet's address, USDC balance and remaining session budget |
+| `gap133_stats` | free | Usage counted from the contract's on-chain `Paid` events |
+
+Claude Desktop config (`claude_desktop_config.json`). It needs Node 20+ and no git:
+
+```json
+{
+  "mcpServers": {
+    "gap133": {
+      "command": "npx",
+      "args": ["-y", "https://codeload.github.com/Romil10/gap133-arc/tar.gz/main"],
+      "env": {
+        "GAP133_AGENT_KEY": "0x... private key of a dedicated wallet with about $1 of USDC on Arc",
+        "GAP133_MAX_SPEND_USDC": "0.10"
+      }
+    }
+  }
+}
+```
+
+Claude Code: `claude mcp add gap133 -e GAP133_AGENT_KEY=0x... -- npx -y https://codeload.github.com/Romil10/gap133-arc/tar.gz/main`
+
+Without `GAP133_AGENT_KEY` the free tools still work. Before any payment the server checks that:
+
+- the 402 names the **pinned** contract (`GAP133_CONTRACT`, default the live one), so a compromised website cannot redirect payment;
+- the quoted price equals `price()` on-chain and is at most `GAP133_MAX_PRICE_USDC` (default 0.01);
+- the session total stays within `GAP133_MAX_SPEND_USDC` (default 0.10). Paid calls run one at a time, so the limit cannot be raced.
+
+After payment it trusts the answer only if it is signed by `attester()` read from that contract. Use a dedicated low-balance wallet, never your main one.
+
 ## Why Arc
 
 - **USDC as gas.** Prices and fees are in dollars, and the caller needs only one asset.
@@ -77,8 +115,10 @@ lib/stats.mjs                     chunked event scan with a committed checkpoint
 scripts/update-checkpoint.mjs     recount job run daily by .github/workflows
 public/index.html                 demo page (pay from MetaMask)
 public/deploy.html                one-time deploy page
+mcp/server.mjs                    MCP server for AI assistants (four tools, spending limits)
+lib/client.mjs                    pay-and-verify client with pinned contract and price checks
 examples/agent.mjs                autonomous agent: pays, then verifies the signature
-test/e2e.mjs                      25 end-to-end checks on a local chain with chain id 5042
+test/e2e.mjs                      35 end-to-end checks on a local chain with chain id 5042
 ```
 
 ## Run the tests

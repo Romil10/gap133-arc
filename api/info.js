@@ -14,6 +14,7 @@ export default async function handler(req, res) {
       price: null,
       kinds: KINDS,
       endpoints: { query: '/api/query?kind=top|net|pair&ticker=...', sample: '/api/sample', stats: '/api/stats', info: '/api/info' },
+      mcp: { install: 'npx -y https://codeload.github.com/Romil10/gap133-arc/tar.gz/main', tools: ['gap133_sample', 'gap133_query', 'gap133_wallet', 'gap133_stats'] },
     };
     const address = process.env.CONTRACT_ADDRESS;
     if (address) {

@@ -83,6 +83,20 @@
   <div id="s-recent" class="status"></div>
   <p class="hint">Counted from the contract's <code>Paid</code> events on Arc mainnet, not from our own database. Anyone can recount them on the explorer.</p>
 
+  <h2>04 / For AI agents</h2>
+  <p>Give Claude, Cursor or any MCP client four gap133 tools: a free sample, free stats, a wallet check, and a paid live query that pays 1¢ on Arc by itself and verifies the signature before answering. It checks the contract and price before paying and stops at a spending limit you set.</p>
+  <pre>{
+  "mcpServers": {
+    "gap133": {
+      "command": "npx",
+      "args": ["-y", "https://codeload.github.com/Romil10/gap133-arc/tar.gz/main"],
+      "env": { "GAP133_AGENT_KEY": "0x… a dedicated wallet with ~$1 USDC on Arc",
+               "GAP133_MAX_SPEND_USDC": "0.10" }
+    }
+  }
+}</pre>
+  <p class="hint">Without a key, the free tools still work. Details in the <a href="https://github.com/Romil10/gap133-arc#use-it-from-an-ai-assistant-mcp" target="_blank" rel="noopener noreferrer">README</a>.</p>
+
   <h2>How it works</h2>
   <div class="kv" id="info"><span>contract</span><span>loading…</span></div>
   <p>The service answers your first request with <code>HTTP 402 Payment Required</code> and a one-time nonce. You call <code>pay(nonce)</code> on the contract with the exact price in native USDC. The service reads the payment on Arc (finality is under a second) and returns the data with the attester's signature in the <code>X-Signature</code> header. The attester address is stored in the contract, so anyone can check it.</p>
@@ -91,7 +105,7 @@
 # pay(nonce) on Arc, then:
 curl https://arc.gap133.xyz/api/query?kind=top \
   -H "X-Payment-Challenge: &lt;challenge&gt;" -H "X-Payment-Tx: &lt;tx hash&gt;"</pre>
-  <p>Agents: see <a href="https://github.com/Romil10/gap133-arc/blob/main/examples/agent.mjs" target="_blank" rel="noopener noreferrer">examples/agent.mjs</a> for a script that pays and verifies on its own.</p>
+  <p>Scripts: see <a href="https://github.com/Romil10/gap133-arc/blob/main/examples/agent.mjs" target="_blank" rel="noopener noreferrer">examples/agent.mjs</a> for a plain Node agent that pays and verifies on its own.</p>
 
   <footer>Market data only, not trading advice. Gaps can close before you act. Source: <a href="https://gap133.xyz" target="_blank" rel="noopener noreferrer">gap133.xyz</a>. Code: <a href="https://github.com/Romil10/gap133-arc" target="_blank" rel="noopener noreferrer">github.com/Romil10/gap133-arc</a>.</footer>
 </div>

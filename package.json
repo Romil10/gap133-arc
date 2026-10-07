@@ -1,7 +1,7 @@
 {
   "name": "gap133-arc",
   "version": "1.0.0",
-  "description": "Pay-per-query gap133 market data on Arc",
+  "description": "Pay-per-query gap133 market data on Arc, with an MCP server for AI agents",
   "scripts": {
     "test": "npm install --no-save ganache@7 && node test/e2e.mjs",
     "compile": "node scripts/compile.mjs"
@@ -18,5 +18,8 @@
   },
   "engines": {
     "node": ">=20"
+  },
+  "bin": {
+    "gap133-arc-mcp": "mcp/server.mjs"
   }
 }

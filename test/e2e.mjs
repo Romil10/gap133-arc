@@ -5,6 +5,7 @@
 import ganache from 'ganache';
 import http from 'node:http';
 import { readFileSync } from 'node:fs';
+import { spawn } from 'node:child_process';
 import { createWalletClient, createPublicClient, http as vhttp, parseUnits, verifyMessage, getAddress } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 
@@ -135,7 +136,58 @@ await pub.waitForTransactionReceipt({ hash: h4 });
 r = await call(stats, '/api/stats');
 ok(r.body.paidQueries === 3 && r.body.uniqueWallets === 2 && r.body.usdcCollected === '0.03', 'stats pick up new payments incrementally');
 
-// 7. owner functions
+// 7. client library and MCP server against a local copy of the service
+const PORT_SVC = 18547;
+const routes = { '/api/query': query, '/api/sample': sample, '/api/stats': stats, '/api/info': info };
+const svc = http.createServer((req, res) => { const h = routes[req.url.split('?')[0]]; if (!h) { res.statusCode = 404; return res.end('{}'); } h(req, res); });
+await new Promise((r) => svc.listen(PORT_SVC, r));
+const SVC = `http://127.0.0.1:${PORT_SVC}`;
+const client = await import('../lib/client.mjs');
+const localChain = client.arcChain(process.env.ARC_RPC_URL);
+const paidNow = async () => (await call(stats, '/api/stats')).body.paidQueries;
+
+let before = await paidNow();
+const bought = await client.buyAnswer({ service: SVC, contract: c1.contract, account: privateKeyToAccount(payerKey), kind: 'top', chain: localChain });
+ok(bought.body.data.pairs.length === 3 && getAddress(bought.attester) === getAddress(attester) && (await paidNow()) === before + 1, 'client pays, then verifies the signature against the on-chain attester');
+before = await paidNow();
+let refused = null;
+try { await client.buyAnswer({ service: SVC, contract: '0x' + '12'.repeat(20), account: privateKeyToAccount(payerKey), chain: localChain }); } catch (e) { refused = e; }
+ok(refused instanceof client.BuyError && /not the pinned contract/.test(refused.message) && (await paidNow()) === before, 'client refuses to pay a contract other than the pinned one');
+refused = null;
+try { await client.buyAnswer({ service: SVC, contract: c1.contract, account: privateKeyToAccount(payerKey), maxPriceWei: price - 1n, chain: localChain }); } catch (e) { refused = e; }
+ok(refused instanceof client.BuyError && /above your limit/.test(refused.message) && (await paidNow()) === before, 'client refuses when the price is above the limit');
+
+const mcp = spawn(process.execPath, ['mcp/server.mjs'], {
+  env: { ...process.env, GAP133_SERVICE_URL: SVC, GAP133_CONTRACT: c1.contract, GAP133_AGENT_KEY: payerKey, GAP133_MAX_SPEND_USDC: '0.01' },
+  stdio: ['pipe', 'pipe', 'pipe'],
+});
+const replies = new Map();
+let buf = '';
+mcp.stdout.on('data', (d) => { buf += d; let i; while ((i = buf.indexOf('\n')) >= 0) { const line = buf.slice(0, i); buf = buf.slice(i + 1); if (line.trim()) { const m = JSON.parse(line); replies.get(m.id)?.(m); } } });
+let rid = 0;
+const rpc = (method, params) => new Promise((resolve) => { const id = ++rid; replies.set(id, resolve); mcp.stdin.write(JSON.stringify({ jsonrpc: '2.0', id, method, params }) + '\n'); });
+const tool = async (name, args = {}) => (await rpc('tools/call', { name, arguments: args })).result;
+
+const init = await rpc('initialize', { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'test', version: '0' } });
+mcp.stdin.write(JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized' }) + '\n');
+ok(init.result.serverInfo.name === 'gap133-arc' && init.result.capabilities.tools, 'MCP initialize handshake');
+const list = await rpc('tools/list', {});
+ok(['gap133_sample', 'gap133_query', 'gap133_wallet', 'gap133_stats'].every((n) => list.result.tools.some((t) => t.name === n)), 'MCP lists the four tools');
+let t = await tool('gap133_sample');
+ok(!t.isError && /FREE SAMPLE/.test(t.content[0].text) && /KXB-2/.test(t.content[0].text), 'MCP free sample tool');
+before = await paidNow();
+t = await tool('gap133_query', { kind: 'top' });
+ok(!t.isError && /Verified: signed by/.test(t.content[0].text) && (await paidNow()) === before + 1, 'MCP paid query pays once and returns a verified answer');
+t = await tool('gap133_query', { kind: 'net' });
+ok(t.isError && /spending limit reached/.test(t.content[0].text) && (await paidNow()) === before + 1, 'MCP enforces the session spending limit without paying');
+t = await tool('gap133_wallet');
+ok(!t.isError && /0\.01 of 0\.01 USDC/.test(t.content[0].text), 'MCP wallet tool reports spend against the limit');
+t = await tool('gap133_stats');
+ok(!t.isError && /Paid queries: \d+/.test(t.content[0].text), 'MCP stats tool');
+mcp.stdin.end();
+svc.close();
+
+// 8. owner functions
 try {
   await payer.writeContract({ address: c1.contract, abi: art.abi, functionName: 'withdraw', args: [payer.account.address] });
   ok(false, 'non-owner cannot withdraw');
