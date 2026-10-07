@@ -13,6 +13,8 @@ No account, no subscription, no API key. A person or an AI agent pays 0.01 USDC 
 | Attester | `0x12cEdf037e7cc9f26403267CE1704bE55c940FBb` (also readable from `attester()` on the contract) |
 | Price | 0.01 USDC per query |
 | Service info | https://arc.gap133.xyz/api/info |
+| Free sample | https://arc.gap133.xyz/api/sample |
+| Usage stats | https://arc.gap133.xyz/api/stats (counted on-chain) |
 
 ## Why Arc
 
@@ -55,6 +57,11 @@ A challenge is valid for 15 minutes and unlocks only the query it was issued for
 | `net` | Pairs still positive after both venues' taker fees |
 | `pair` | One pair by Kalshi ticker (`&ticker=KX...`) |
 
+### Free sample and usage stats
+
+- `GET /api/sample` is free. It returns the single biggest verified gap from a snapshot refreshed every 10 minutes, unsigned, so anyone can see what the data looks like before paying.
+- `GET /api/stats` returns paid queries, unique wallets and USDC collected, counted from the contract's `Paid` events on Arc rather than from a database. Arc's RPC limits log queries to 10,000 blocks, so totals up to a recent block are kept in `lib/stats-checkpoint.mjs`, refreshed daily by a GitHub Action, and the endpoint scans only the blocks since then.
+
 Data comes from gap133's live desk tier: matched Polymarket/Limitless and Kalshi pairs that passed the deterministic matcher, a same-event check and a staleness gate, with fee-adjusted net gaps. Free visitors to gap133.xyz see a 10-minute-delayed board; paying here returns the live one.
 
 ## Repository
@@ -64,10 +71,14 @@ contracts/Gap133PayPerQuery.sol   the Arc contract (pay, price, attester, withdr
 lib/core.mjs                      challenges, payment verification, data fetch, signing
 api/query.js                      the 402 -> pay -> answer endpoint
 api/info.js                       contract, price and attester
+api/sample.js                     free, 10-minute-delayed sample gap
+api/stats.js                      usage counted from on-chain Paid events
+lib/stats.mjs                     chunked event scan with a committed checkpoint
+scripts/update-checkpoint.mjs     recount job run daily by .github/workflows
 public/index.html                 demo page (pay from MetaMask)
 public/deploy.html                one-time deploy page
 examples/agent.mjs                autonomous agent: pays, then verifies the signature
-test/e2e.mjs                      20 end-to-end checks on a local chain with chain id 5042
+test/e2e.mjs                      25 end-to-end checks on a local chain with chain id 5042
 ```
 
 ## Run the tests

@@ -34,6 +34,20 @@
   .badge { display:inline-block; padding:1px 6px; border:1.5px solid var(--ink); font-size:11px; margin-left:6px; }
   .ok { background:var(--acid); }
   footer { margin-top:48px; color:var(--mute); font-size:12px; }
+  .hint { color:var(--mute); font-size:13px; margin:6px 0 10px; }
+  .card { border:2px solid var(--ink); background:#fff; padding:16px 18px; }
+  .card .mkt { font:700 17px/1.35 'Space Mono', monospace; margin:2px 0 6px; }
+  .card .big { font:700 40px/1 'Space Mono', monospace; }
+  .card .big small { font-size:14px; font-weight:400; color:var(--mute); margin-left:6px; }
+  .card .meta { color:var(--mute); font-size:12px; margin-top:8px; }
+  .tag { display:inline-block; background:var(--acid); font-size:11px; font-weight:700; padding:1px 6px; letter-spacing:0.06em; }
+  .stats { display:grid; grid-template-columns:repeat(3,1fr); border:2px solid var(--ink); background:#fff; }
+  .stats div { padding:14px 16px; border-right:2px solid var(--ink); }
+  .stats div:last-child { border-right:0; }
+  .stats b { display:block; font:700 32px/1.1 'Space Mono', monospace; }
+  .stats span { color:var(--mute); font-size:12px; text-transform:uppercase; letter-spacing:0.06em; }
+  #s-recent { font-size:12px; margin-top:8px; }
+  @media (max-width:560px) { .stats { grid-template-columns:1fr; } .stats div { border-right:0; border-bottom:2px solid var(--ink); } .stats div:last-child { border-bottom:0; } }
 </style>
 </head>
 <body>
@@ -41,7 +55,11 @@
   <h1>gap133 <b>on Arc</b></h1>
   <p class="lede">Pay one cent in USDC on Arc and get gap133's live, verified cross-venue prediction-market gaps. No account, no subscription, no API key. Every answer is signed, so an agent can prove it came from gap133.</p>
 
-  <h2>01 / Ask</h2>
+  <h2>00 / Free sample</h2>
+  <div class="card" id="sample"><span class="status">Loading the biggest gap…</span></div>
+
+  <h2>01 / Ask live</h2>
+  <p class="hint">The sample above is one gap from a snapshot up to 10 minutes old. Paying 0.01 USDC returns the live board, with gaps after fees, signed by the attester.</p>
   <div class="row">
     <select id="kind">
       <option value="top">Top 5 gaps right now</option>
@@ -55,6 +73,15 @@
 
   <h2>02 / Answer</h2>
   <div id="answer" class="status">Nothing yet.</div>
+
+  <h2>03 / On-chain usage</h2>
+  <div class="stats">
+    <div><b id="s-count">–</b><span>paid queries</span></div>
+    <div><b id="s-wallets">–</b><span>unique wallets</span></div>
+    <div><b id="s-usdc">–</b><span>USDC collected</span></div>
+  </div>
+  <div id="s-recent" class="status"></div>
+  <p class="hint">Counted from the contract's <code>Paid</code> events on Arc mainnet, not from our own database. Anyone can recount them on the explorer.</p>
 
   <h2>How it works</h2>
   <div class="kv" id="info"><span>contract</span><span>loading…</span></div>
@@ -86,6 +113,48 @@ $('kind').onchange = () => { $('ticker').style.display = $('kind').value === 'pa
       <span>attester</span><span>${esc(i.attester)}${i.attesterMatchesContract ? '<span class="badge ok">matches contract</span>' : ''}</span>`;
   } catch { $('info').innerHTML = '<span>status</span><span>service unreachable</span>'; }
 })();
+
+const cents = (v) => (v == null ? '–' : Number(v).toFixed(2) + '¢');
+const short = (a) => a.slice(0, 6) + '…' + a.slice(-4);
+const ago = (iso) => {
+  if (!iso) return '';
+  const m = Math.max(0, Math.round((Date.now() - new Date(iso)) / 60000));
+  return m < 1 ? 'just now' : m < 60 ? m + ' min ago' : m < 1440 ? Math.round(m / 60) + ' h ago' : Math.round(m / 1440) + ' d ago';
+};
+
+async function loadSample() {
+  try {
+    const r = await fetch('/api/sample');
+    const s = await r.json();
+    if (!r.ok) throw new Error(s.error);
+    if (!s.pair) { $('sample').innerHTML = '<span class="status">No verified gaps on the board right now.</span>'; return; }
+    const p = s.pair;
+    $('sample').innerHTML = `<span class="tag">FREE · DELAYED</span>
+      <div class="mkt">${esc(p.market)}</div>
+      <div class="big">${cents(p.rawCents)}<small>raw gap, ${esc(p.venues[0] || '')} vs Kalshi</small></div>
+      <div class="meta">After fees: ${cents(p.netCents)} · snapshot ${ago(s.snapshotAt)} · refreshes every ${s.refreshMinutes} min</div>`;
+  } catch {
+    $('sample').innerHTML = '<span class="status">Sample unavailable right now.</span>';
+  }
+}
+
+async function loadStats() {
+  try {
+    const r = await fetch('/api/stats');
+    const s = await r.json();
+    if (!r.ok) throw new Error(s.error);
+    $('s-count').textContent = s.paidQueries;
+    $('s-wallets').textContent = s.uniqueWallets;
+    $('s-usdc').textContent = Number(s.usdcCollected).toFixed(2);
+    $('s-recent').innerHTML = s.recent.length
+      ? 'Latest: ' + s.recent.slice(0, 5).map((x) => `<a href="https://explorer.arc.io/tx/${esc(x.tx)}" target="_blank" rel="noopener noreferrer">${esc(short(x.payer))}</a> ${ago(x.at)}`).join(' · ')
+      : 'No payments yet. Be the first.';
+  } catch {
+    $('s-recent').textContent = 'Stats unavailable right now.';
+  }
+}
+loadSample();
+loadStats();
 
 function queryString() {
   const kind = $('kind').value;
@@ -150,6 +219,7 @@ $('go').onclick = async () => {
     if (!res.ok) throw new Error(body.error || 'query failed');
     render(body, res.headers.get('X-Attester'));
     say('Done. The answer below is signed by the attester shown.');
+    setTimeout(loadStats, 1500);
   } catch (e) {
     say(e.message || String(e), true);
   } finally {

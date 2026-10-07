@@ -41,6 +41,8 @@ process.env.DESK_KEY = 'test-desk-key';
 const core = await import('../lib/core.mjs');
 const { default: query } = await import('../api/query.js');
 const { default: info } = await import('../api/info.js');
+const { default: sample } = await import('../api/sample.js');
+const { default: stats } = await import('../api/stats.js');
 const art = JSON.parse(readFileSync('public/contract.json', 'utf8'));
 const chain = core.ARC;
 const pub = createPublicClient({ chain, transport: vhttp(process.env.ARC_RPC_URL) });
@@ -119,7 +121,21 @@ await pub.waitForTransactionReceipt({ hash: h3 });
 r = await call(query, '/api/query?kind=pair&ticker=KXA-1', { 'x-payment-challenge': c3.challenge, 'x-payment-tx': h3 });
 ok(r.status === 200 && r.body.data.pairs[0].kx.ticker === 'KXA-1', 'pair query works (ticker case-insensitive)');
 
-// 6. owner functions
+// 6. free sample and on-chain stats
+r = await call(sample, '/api/sample');
+ok(r.status === 200 && r.body.sample === true && r.body.pair.ticker === 'KXB-2' && r.body.pair.rawCents === 9.1, 'free sample returns the single biggest gap');
+ok(/s-maxage=600/.test(r.headers['cache-control']) && !('x-signature' in r.headers), 'sample is edge-cached for 10 min and unsigned');
+r = await call(stats, '/api/stats');
+ok(r.status === 200 && r.body.paidQueries === 2 && r.body.uniqueWallets === 1 && r.body.usdcCollected === '0.02' && r.body.complete, 'stats count Paid events on-chain');
+ok(r.body.recent.length === 2 && r.body.recent[0].tx === h3 && r.body.recent[0].at, 'stats list latest payment first, with time');
+r = await call(query, '/api/query?kind=net');
+const c4 = r.body;
+const h4 = await owner.writeContract({ address: c4.contract, abi: art.abi, functionName: 'pay', args: [c4.nonce], value: price });
+await pub.waitForTransactionReceipt({ hash: h4 });
+r = await call(stats, '/api/stats');
+ok(r.body.paidQueries === 3 && r.body.uniqueWallets === 2 && r.body.usdcCollected === '0.03', 'stats pick up new payments incrementally');
+
+// 7. owner functions
 try {
   await payer.writeContract({ address: c1.contract, abi: art.abi, functionName: 'withdraw', args: [payer.account.address] });
   ok(false, 'non-owner cannot withdraw');

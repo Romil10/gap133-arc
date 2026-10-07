@@ -13,7 +13,7 @@ export default async function handler(req, res) {
       contract: null,
       price: null,
       kinds: KINDS,
-      endpoints: { query: '/api/query?kind=top|net|pair&ticker=...', info: '/api/info' },
+      endpoints: { query: '/api/query?kind=top|net|pair&ticker=...', sample: '/api/sample', stats: '/api/stats', info: '/api/info' },
     };
     const address = process.env.CONTRACT_ADDRESS;
     if (address) {
