@@ -4,6 +4,16 @@ Pay-per-query access to [gap133](https://gap133.xyz)'s live, verified cross-venu
 
 No account, no subscription, no API key. A person or an AI agent pays 0.01 USDC for one answer, and every answer is signed so the caller can prove it came from gap133.
 
+## Live on Arc mainnet
+
+| | |
+|---|---|
+| Demo | https://gap133-arc-9owz.vercel.app |
+| Contract | [`0x5EA8609e0DFA6F40b0c24CB3F766e37e91051585`](https://explorer.arc.io/address/0x5EA8609e0DFA6F40b0c24CB3F766e37e91051585) (source verified) |
+| Attester | `0x12cEdf037e7cc9f26403267CE1704bE55c940FBb` (also readable from `attester()` on the contract) |
+| Price | 0.01 USDC per query |
+| Service info | https://gap133-arc-9owz.vercel.app/api/info |
+
 ## Why Arc
 
 - **USDC as gas.** Prices and fees are in dollars, and the caller needs only one asset.
