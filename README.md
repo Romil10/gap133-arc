@@ -8,11 +8,11 @@ No account, no subscription, no API key. A person or an AI agent pays 0.01 USDC 
 
 | | |
 |---|---|
-| Demo | https://gap133-arc-9owz.vercel.app |
+| Demo | https://arc.gap133.xyz |
 | Contract | [`0x5EA8609e0DFA6F40b0c24CB3F766e37e91051585`](https://explorer.arc.io/address/0x5EA8609e0DFA6F40b0c24CB3F766e37e91051585) (source verified) |
 | Attester | `0x12cEdf037e7cc9f26403267CE1704bE55c940FBb` (also readable from `attester()` on the contract) |
 | Price | 0.01 USDC per query |
-| Service info | https://gap133-arc-9owz.vercel.app/api/info |
+| Service info | https://arc.gap133.xyz/api/info |
 
 ## Why Arc
 

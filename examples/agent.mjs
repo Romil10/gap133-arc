@@ -1,7 +1,7 @@
 // An autonomous agent that buys one gap133 answer on Arc and verifies it.
 //
 //   AGENT_PRIVATE_KEY=0x...  (a throwaway wallet holding a few cents of USDC on Arc)
-//   SERVICE_URL=https://your-deployment.vercel.app
+//   SERVICE_URL=https://arc.gap133.xyz
 //   node examples/agent.mjs top
 //
 // It requests the query, receives HTTP 402 with a nonce, pays pay(nonce) on

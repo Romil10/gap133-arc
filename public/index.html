@@ -59,10 +59,10 @@
   <h2>How it works</h2>
   <div class="kv" id="info"><span>contract</span><span>loading…</span></div>
   <p>The service answers your first request with <code>HTTP 402 Payment Required</code> and a one-time nonce. You call <code>pay(nonce)</code> on the contract with the exact price in native USDC. The service reads the payment on Arc (finality is under a second) and returns the data with the attester's signature in the <code>X-Signature</code> header. The attester address is stored in the contract, so anyone can check it.</p>
-  <pre>curl -i https://gap133-arc-9owz.vercel.app/api/query?kind=top
+  <pre>curl -i https://arc.gap133.xyz/api/query?kind=top
 # -> 402 { nonce, challenge, contract, price }
 # pay(nonce) on Arc, then:
-curl https://gap133-arc-9owz.vercel.app/api/query?kind=top \
+curl https://arc.gap133.xyz/api/query?kind=top \
   -H "X-Payment-Challenge: &lt;challenge&gt;" -H "X-Payment-Tx: &lt;tx hash&gt;"</pre>
   <p>Agents: see <a href="https://github.com/Romil10/gap133-arc/blob/main/examples/agent.mjs" target="_blank" rel="noopener noreferrer">examples/agent.mjs</a> for a script that pays and verifies on its own.</p>
 
