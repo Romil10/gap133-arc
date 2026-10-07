@@ -5,6 +5,8 @@ import { runQuery, json, fail } from '../lib/core.mjs';
 // returns the live top five, fee-adjusted, signed by the attester.
 const TTL_MS = 10 * 60 * 1000;
 let snap = null;
+const round2 = (v) => (v == null ? null : Math.round(v * 100) / 100);
+const venueName = (v) => (v ? v.charAt(0).toUpperCase() + v.slice(1) : null);
 
 export default async function handler(req, res) {
   try {
@@ -16,10 +18,10 @@ export default async function handler(req, res) {
         pair: p && {
           market: p.kx?.title || p.kx?.ticker || null,
           ticker: p.kx?.ticker || null,
-          venues: [p.second?.venue || null, 'Kalshi'],
+          venues: [venueName(p.second?.venue), 'Kalshi'],
           status: p.status || null,
-          rawCents: p.gap?.rawCents ?? null,
-          netCents: p.gap?.netCents ?? null,
+          rawCents: round2(p.gap?.rawCents),
+          netCents: round2(p.gap?.netCents),
         },
         liveCount: pairs.length,
       };
