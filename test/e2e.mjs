@@ -4,7 +4,7 @@
 // of negative cases. Run: node test/e2e.mjs
 import ganache from 'ganache';
 import http from 'node:http';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { spawn } from 'node:child_process';
 import { createWalletClient, createPublicClient, http as vhttp, parseUnits, verifyMessage, getAddress } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
@@ -185,6 +185,22 @@ ok(!t.isError && /0\.01 of 0\.01 USDC/.test(t.content[0].text), 'MCP wallet tool
 t = await tool('gap133_stats');
 ok(!t.isError && /Paid queries: \d+/.test(t.content[0].text), 'MCP stats tool');
 mcp.stdin.end();
+
+// The packed Claude Desktop extension runs the bundled copy; check it pays and verifies too.
+if (existsSync('extension/server/index.mjs')) {
+  const ext = spawn(process.execPath, ['extension/server/index.mjs'], {
+    env: { ...process.env, GAP133_SERVICE_URL: SVC, GAP133_CONTRACT: c1.contract, GAP133_AGENT_KEY: ownerKey, GAP133_MAX_SPEND_USDC: '${user_config.max_spend_usdc}' },
+    stdio: ['pipe', 'pipe', 'pipe'],
+  });
+  const got = new Map(); let eb = '';
+  ext.stdout.on('data', (d) => { eb += d; let i; while ((i = eb.indexOf('\n')) >= 0) { const l = eb.slice(0, i); eb = eb.slice(i + 1); if (l.trim()) { const m = JSON.parse(l); got.get(m.id)?.(m); } } });
+  const erpc = (id, method, params) => new Promise((resolve) => { got.set(id, resolve); ext.stdin.write(JSON.stringify({ jsonrpc: '2.0', id, method, params }) + '\n'); });
+  await erpc(1, 'initialize', { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'test', version: '0' } });
+  before = await paidNow();
+  const er = (await erpc(2, 'tools/call', { name: 'gap133_query', arguments: { kind: 'top' } })).result;
+  ok(!er.isError && /Verified: signed by/.test(er.content[0].text) && /of 0\.1 USDC/.test(er.content[0].text) && (await paidNow()) === before + 1, 'bundled extension pays, verifies, and defaults an unfilled limit to 0.10');
+  ext.stdin.end();
+}
 svc.close();
 
 // 8. owner functions

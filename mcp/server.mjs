@@ -20,14 +20,15 @@ import { privateKeyToAccount } from 'viem/accounts';
 import { formatUnits, parseUnits } from 'viem';
 import { buyAnswer, walletInfo, getJson, DEFAULT_SERVICE, DEFAULT_CONTRACT, EXPLORER, BuyError } from '../lib/client.mjs';
 
-const VERSION = '1.0.0';
-const service = (process.env.GAP133_SERVICE_URL || DEFAULT_SERVICE).replace(/\/$/, '');
-const contract = process.env.GAP133_CONTRACT || DEFAULT_CONTRACT;
-const maxSpendWei = parseUnits(process.env.GAP133_MAX_SPEND_USDC || '0.10', 18);
-const maxPriceWei = parseUnits(process.env.GAP133_MAX_PRICE_USDC || '0.01', 18);
+const VERSION = '1.1.0';
+const env = (k, d) => { const v = (process.env[k] || '').trim(); return v && !v.startsWith('${') ? v : d; };
+const service = env('GAP133_SERVICE_URL', DEFAULT_SERVICE).replace(/\/$/, '');
+const contract = env('GAP133_CONTRACT', DEFAULT_CONTRACT);
+const maxSpendWei = parseUnits(String(env('GAP133_MAX_SPEND_USDC', '0.10')), 18);
+const maxPriceWei = parseUnits(String(env('GAP133_MAX_PRICE_USDC', '0.01')), 18);
 let account = null;
 try {
-  const k = (process.env.GAP133_AGENT_KEY || '').trim();
+  const k = env('GAP133_AGENT_KEY', '');
   if (k) account = privateKeyToAccount(k.startsWith('0x') ? k : '0x' + k);
 } catch {
   process.stderr.write('gap133: GAP133_AGENT_KEY is not a valid private key; paid queries are disabled\n');
@@ -92,12 +93,12 @@ async function callTool(name, args = {}) {
     return text(`gap133 on Arc usage (counted from on-chain Paid events on ${s.contract})\nPaid queries: ${s.paidQueries}\nUnique wallets: ${s.uniqueWallets}\nUSDC collected: ${s.usdcCollected}${recent ? '\nLatest:\n' + recent : ''}`);
   }
   if (name === 'gap133_wallet') {
-    if (!account) return text('No agent wallet configured. Set GAP133_AGENT_KEY in this MCP server\'s env to the private key of a dedicated wallet holding about $1 of USDC on Arc mainnet. The free tools work without it.');
+    if (!account) return text('No agent wallet configured. Add the private key of a dedicated wallet holding about $1 of USDC on Arc mainnet (in Claude Desktop: Settings > Extensions > gap133 > Configure; otherwise the GAP133_AGENT_KEY env var). The free tools work without it.');
     const w = await walletInfo({ account });
     return text(`Agent wallet: ${w.address}\nBalance: ${w.balanceUsdc} USDC on Arc\nSpent this session: ${usdc(spentWei)} of ${usdc(maxSpendWei)} USDC limit (${paidCount} paid queries)`);
   }
   if (name === 'gap133_query') {
-    if (!account) return text('Paid queries need an agent wallet. Set GAP133_AGENT_KEY (a dedicated wallet with about $1 of USDC on Arc). Meanwhile gap133_sample is free.', true);
+    if (!account) return text('Paid queries need an agent wallet: add the private key of a dedicated wallet with about $1 of USDC on Arc (Claude Desktop: Settings > Extensions > gap133 > Configure). Meanwhile gap133_sample is free.', true);
     const kind = args.kind || 'top';
     if (!['top', 'net', 'pair'].includes(kind)) return text('kind must be top, net or pair', true);
     if (kind === 'pair' && !args.ticker) return text('kind "pair" needs a ticker', true);

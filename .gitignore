@@ -2,3 +2,6 @@ node_modules/
 .env
 .env.*
 .vercel/
+public/gap133.mcpb
+extension/server/
+extension/icon.png

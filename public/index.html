@@ -47,6 +47,10 @@
   .stats b { display:block; font:700 32px/1.1 'Space Mono', monospace; }
   .stats span { color:var(--mute); font-size:12px; text-transform:uppercase; letter-spacing:0.06em; }
   #s-recent { font-size:12px; margin-top:8px; }
+  a.btn { display:inline-block; background:var(--acid); color:var(--ink); border:2px solid var(--ink); padding:11px 16px; font-weight:700; text-decoration:none; }
+  a.btn:hover { background:var(--ink); color:var(--acid); }
+  ol.steps { padding-left:22px; } ol.steps li { margin:6px 0; }
+  details { margin-top:10px; } summary { cursor:pointer; font-weight:700; }
   @media (max-width:560px) { .stats { grid-template-columns:1fr; } .stats div { border-right:0; border-bottom:2px solid var(--ink); } .stats div:last-child { border-bottom:0; } }
 </style>
 </head>
@@ -83,19 +87,31 @@
   <div id="s-recent" class="status"></div>
   <p class="hint">Counted from the contract's <code>Paid</code> events on Arc mainnet, not from our own database. Anyone can recount them on the explorer.</p>
 
-  <h2>04 / For AI agents</h2>
-  <p>Give Claude, Cursor or any MCP client four gap133 tools: a free sample, free stats, a wallet check, and a paid live query that pays 1¢ on Arc by itself and verifies the signature before answering. It checks the contract and price before paying and stops at a spending limit you set.</p>
-  <pre>{
+  <h2>04 / Use it inside Claude</h2>
+  <p>Ask Claude <i>"what are the biggest market gaps right now?"</i> and it answers from gap133. For live answers it pays the 1¢ itself and checks the signature first.</p>
+  <div class="row"><a class="btn" href="/gap133.mcpb" download>Download for Claude Desktop</a><span class="hint">Mac and Windows · 113 KB · no Terminal needed</span></div>
+  <ol class="steps">
+    <li><b>Double-click</b> the downloaded <code>gap133.mcpb</code> file. Claude Desktop opens and asks to install it. Click <b>Install</b>.</li>
+    <li>That's it for the free tools. For live answers, paste the private key of a <b>new wallet made just for this</b>, holding about $1 of USDC on Arc. Claude keeps it in your system keychain, and the extension stops at your spending limit (10¢ by default).</li>
+    <li>In a new chat, ask: <i>"Use gap133 to get the live top gaps."</i></li>
+  </ol>
+  <p class="hint">Before every payment it checks that it is paying the official gap133 contract at the on-chain price. Never use your main wallet.</p>
+  <details><summary>Claude Code, Cursor and other MCP apps</summary>
+  <pre>claude mcp add gap133 -- npx -y https://codeload.github.com/Romil10/gap133-arc/tar.gz/main
+
+# any MCP client config:
+{
   "mcpServers": {
     "gap133": {
       "command": "npx",
       "args": ["-y", "https://codeload.github.com/Romil10/gap133-arc/tar.gz/main"],
-      "env": { "GAP133_AGENT_KEY": "0x… a dedicated wallet with ~$1 USDC on Arc",
+      "env": { "GAP133_AGENT_KEY": "0x… dedicated wallet, ~$1 USDC on Arc",
                "GAP133_MAX_SPEND_USDC": "0.10" }
     }
   }
 }</pre>
   <p class="hint">Without a key, the free tools still work. Details in the <a href="https://github.com/Romil10/gap133-arc#use-it-from-an-ai-assistant-mcp" target="_blank" rel="noopener noreferrer">README</a>.</p>
+  </details>
 
   <h2>How it works</h2>
   <div class="kv" id="info"><span>contract</span><span>loading…</span></div>

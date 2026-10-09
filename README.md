@@ -18,6 +18,10 @@ No account, no subscription, no API key. A person or an AI agent pays 0.01 USDC 
 
 ## Use it from an AI assistant (MCP)
 
+**Claude Desktop, no Terminal:** download [`gap133.mcpb`](https://arc.gap133.xyz/gap133.mcpb), double-click it and click Install. Claude Desktop runs it with its built-in Node and shows a settings form: leave the key empty for the free tools, or paste the key of a dedicated spending wallet (stored in the system keychain). The file is built from this repo on every deploy (`scripts/build-extension.mjs`, manifest in `extension/`).
+
+**Other MCP clients (developers):**
+
 `mcp/server.mjs` is an MCP server. Add it to Claude Desktop, Claude Code, Cursor or any MCP client and the assistant gets four tools:
 
 | Tool | Cost | What it does |
@@ -27,7 +31,7 @@ No account, no subscription, no API key. A person or an AI agent pays 0.01 USDC 
 | `gap133_wallet` | free | The agent wallet's address, USDC balance and remaining session budget |
 | `gap133_stats` | free | Usage counted from the contract's on-chain `Paid` events |
 
-Claude Desktop config (`claude_desktop_config.json`). It needs Node 20+ and no git:
+Manual config (`claude_desktop_config.json` or any MCP client). Needs Node 20+:
 
 ```json
 {
@@ -116,9 +120,10 @@ scripts/update-checkpoint.mjs     recount job run daily by .github/workflows
 public/index.html                 demo page (pay from MetaMask)
 public/deploy.html                one-time deploy page
 mcp/server.mjs                    MCP server for AI assistants (four tools, spending limits)
+extension/manifest.json           Claude Desktop extension (built into public/gap133.mcpb)
 lib/client.mjs                    pay-and-verify client with pinned contract and price checks
 examples/agent.mjs                autonomous agent: pays, then verifies the signature
-test/e2e.mjs                      35 end-to-end checks on a local chain with chain id 5042
+test/e2e.mjs                      36 end-to-end checks on a local chain with chain id 5042
 ```
 
 ## Run the tests
