@@ -92,7 +92,7 @@
   <div class="row"><a class="btn" href="/gap133.mcpb" download>Download for Claude Desktop</a><span class="hint">Mac and Windows · 113 KB · no Terminal needed</span></div>
   <ol class="steps">
     <li><b>Double-click</b> the downloaded <code>gap133.mcpb</code> file. Claude Desktop opens and asks to install it. Click <b>Install</b>.</li>
-    <li>That's it for the free tools. For live answers, paste the private key of a <b>new wallet made just for this</b>, holding about $1 of USDC on Arc. Claude keeps it in your system keychain, and the extension stops at your spending limit (10¢ by default).</li>
+    <li>That's it for the free tools. For live answers, paste the private key of a <b>new wallet made just for this</b>, holding a few cents of USDC on Arc (each answer is 1¢). Claude keeps it in your system keychain, and the extension stops at your spending limit (10¢ by default).</li>
     <li>In a new chat, ask: <i>"Use gap133 to get the live top gaps."</i></li>
   </ol>
   <p class="hint">Before every payment it checks that it is paying the official gap133 contract at the on-chain price. Never use your main wallet.</p>
@@ -105,7 +105,7 @@
     "gap133": {
       "command": "npx",
       "args": ["-y", "https://codeload.github.com/Romil10/gap133-arc/tar.gz/main"],
-      "env": { "GAP133_AGENT_KEY": "0x… dedicated wallet, ~$1 USDC on Arc",
+      "env": { "GAP133_AGENT_KEY": "0x… dedicated wallet, a few cents of USDC on Arc",
                "GAP133_MAX_SPEND_USDC": "0.10" }
     }
   }

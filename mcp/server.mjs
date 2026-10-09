@@ -6,7 +6,7 @@
 //   gap133_query   pays 0.01 USDC on Arc and returns the live answer, signature verified
 //
 // Configuration (environment variables set in your MCP client config):
-//   GAP133_AGENT_KEY       private key of a DEDICATED spending wallet holding about $1 of USDC on Arc.
+//   GAP133_AGENT_KEY       private key of a DEDICATED spending wallet holding a few cents of USDC on Arc.
 //                          Optional: without it the free tools still work.
 //   GAP133_MAX_SPEND_USDC  total the server may spend per session (default 0.10)
 //   GAP133_MAX_PRICE_USDC  refuse if one query costs more than this (default 0.01)
@@ -20,19 +20,35 @@ import { privateKeyToAccount } from 'viem/accounts';
 import { formatUnits, parseUnits } from 'viem';
 import { buyAnswer, walletInfo, getJson, DEFAULT_SERVICE, DEFAULT_CONTRACT, EXPLORER, BuyError } from '../lib/client.mjs';
 
-const VERSION = '1.1.0';
+const VERSION = '1.1.1';
 const env = (k, d) => { const v = (process.env[k] || '').trim(); return v && !v.startsWith('${') ? v : d; };
 const service = env('GAP133_SERVICE_URL', DEFAULT_SERVICE).replace(/\/$/, '');
 const contract = env('GAP133_CONTRACT', DEFAULT_CONTRACT);
 const maxSpendWei = parseUnits(String(env('GAP133_MAX_SPEND_USDC', '0.10')), 18);
 const maxPriceWei = parseUnits(String(env('GAP133_MAX_PRICE_USDC', '0.01')), 18);
 let account = null;
-try {
-  const k = env('GAP133_AGENT_KEY', '');
-  if (k) account = privateKeyToAccount(k.startsWith('0x') ? k : '0x' + k);
-} catch {
-  process.stderr.write('gap133: GAP133_AGENT_KEY is not a valid private key; paid queries are disabled\n');
+let keyProblem = null; // set when a key was given but could not be used
+{
+  // Accept common paste mistakes: quotes, spaces, line breaks, missing 0x.
+  const raw = env('GAP133_AGENT_KEY', '').replace(/["'\s]/g, '');
+  if (raw) {
+    const hex = raw.replace(/^0x/i, '');
+    if (!/^[0-9a-fA-F]{64}$/.test(hex)) {
+      keyProblem = `the key you entered is not a valid private key (expected 64 hexadecimal characters, got ${hex.length}). A private key is not the wallet address (0x + 40 characters) and not the 12-word recovery phrase. In MetaMask: account menu > Account details > Show private key.`;
+    } else {
+      try {
+        account = privateKeyToAccount('0x' + hex);
+      } catch {
+        keyProblem = 'the key you entered could not be used as a private key.';
+      }
+    }
+    if (keyProblem) process.stderr.write('gap133: ' + keyProblem + '\n');
+  }
 }
+const SETUP_HINT = 'In Claude Desktop: Settings > Extensions > gap133 on Arc > Configure, paste the key, save, then turn the extension off and on (or restart Claude Desktop).';
+const noWallet = () => keyProblem
+  ? `Paid queries are off because ${keyProblem} ${SETUP_HINT}`
+  : `Paid queries need a spending wallet: add the private key of a wallet made just for this, holding a few cents of USDC on Arc (each live answer costs 0.01 USDC). ${SETUP_HINT} The free tools work without it.`;
 let spentWei = 0n;
 let paidCount = 0;
 let payLock = Promise.resolve(); // paid queries run one at a time so the budget check cannot race
@@ -93,12 +109,12 @@ async function callTool(name, args = {}) {
     return text(`gap133 on Arc usage (counted from on-chain Paid events on ${s.contract})\nPaid queries: ${s.paidQueries}\nUnique wallets: ${s.uniqueWallets}\nUSDC collected: ${s.usdcCollected}${recent ? '\nLatest:\n' + recent : ''}`);
   }
   if (name === 'gap133_wallet') {
-    if (!account) return text('No agent wallet configured. Add the private key of a dedicated wallet holding about $1 of USDC on Arc mainnet (in Claude Desktop: Settings > Extensions > gap133 > Configure; otherwise the GAP133_AGENT_KEY env var). The free tools work without it.');
+    if (!account) return text(noWallet());
     const w = await walletInfo({ account });
     return text(`Agent wallet: ${w.address}\nBalance: ${w.balanceUsdc} USDC on Arc\nSpent this session: ${usdc(spentWei)} of ${usdc(maxSpendWei)} USDC limit (${paidCount} paid queries)`);
   }
   if (name === 'gap133_query') {
-    if (!account) return text('Paid queries need an agent wallet: add the private key of a dedicated wallet with about $1 of USDC on Arc (Claude Desktop: Settings > Extensions > gap133 > Configure). Meanwhile gap133_sample is free.', true);
+    if (!account) return text(noWallet() + ' Meanwhile gap133_sample is free.', true);
     const kind = args.kind || 'top';
     if (!['top', 'net', 'pair'].includes(kind)) return text('kind must be top, net or pair', true);
     if (kind === 'pair' && !args.ticker) return text('kind "pair" needs a ticker', true);

@@ -2,9 +2,9 @@
   "manifest_version": "0.3",
   "name": "gap133-arc",
   "display_name": "gap133 on Arc",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Live, verified price gaps between Polymarket/Limitless and Kalshi. Free sample, or 1 cent in USDC on Arc per live answer, signature-checked.",
-  "long_description": "gap133 finds the same prediction-market event priced differently on Polymarket or Limitless and on Kalshi, and shows the gap before and after fees.\n\nFree tools: a 10-minute-delayed sample and on-chain usage stats work with no setup.\n\nPaid tool: add the private key of a small, dedicated spending wallet holding about $1 of USDC on Arc mainnet. Each live answer costs 0.01 USDC, paid automatically. Before paying, the extension checks it is paying the official gap133 contract at the on-chain price, and it stops at the spending limit you set. Every answer is signature-checked against the attester stored in that contract.\n\nThe key is stored by Claude Desktop in your system keychain and never leaves your computer. Use a wallet made just for this, never your main one.\n\nMarket data only, not trading advice.",
+  "long_description": "gap133 finds the same prediction-market event priced differently on Polymarket or Limitless and on Kalshi, and shows the gap before and after fees.\n\nFree tools: a 10-minute-delayed sample and on-chain usage stats work with no setup.\n\nPaid tool: add the private key of a small, dedicated spending wallet holding a few cents of USDC on Arc mainnet. Each live answer costs 0.01 USDC, paid automatically. Before paying, the extension checks it is paying the official gap133 contract at the on-chain price, and it stops at the spending limit you set. Every answer is signature-checked against the attester stored in that contract.\n\nThe key is stored by Claude Desktop in your system keychain and never leaves your computer. Use a wallet made just for this, never your main one.\n\nMarket data only, not trading advice.",
   "author": { "name": "Romil Sharma", "url": "https://gap133.xyz" },
   "repository": { "type": "git", "url": "https://github.com/Romil10/gap133-arc" },
   "homepage": "https://arc.gap133.xyz",
@@ -35,7 +35,7 @@
     "agent_key": {
       "type": "string",
       "title": "Spending wallet private key (optional)",
-      "description": "Only needed for live paid answers. Use a NEW wallet made just for this, holding about $1 of USDC on Arc mainnet. Stored in your system keychain. Leave empty to use the free tools only.",
+      "description": "Only needed for live paid answers. Use a NEW wallet made just for this, holding a few cents of USDC on Arc mainnet (each live answer costs 0.01). Paste the PRIVATE KEY (64 characters), not the wallet address or recovery phrase. Stored in your system keychain. Leave empty to use the free tools only.",
       "sensitive": true,
       "required": false
     },

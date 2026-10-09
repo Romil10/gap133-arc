@@ -40,7 +40,7 @@ Manual config (`claude_desktop_config.json` or any MCP client). Needs Node 20+:
       "command": "npx",
       "args": ["-y", "https://codeload.github.com/Romil10/gap133-arc/tar.gz/main"],
       "env": {
-        "GAP133_AGENT_KEY": "0x... private key of a dedicated wallet with about $1 of USDC on Arc",
+        "GAP133_AGENT_KEY": "0x... private key of a dedicated wallet with a few cents of USDC on Arc",
         "GAP133_MAX_SPEND_USDC": "0.10"
       }
     }
